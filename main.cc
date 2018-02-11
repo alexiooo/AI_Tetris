@@ -75,9 +75,19 @@ enum EvalName {Smart, Montecarlo};
 const int MONTE_LOOP = 1000; //times each move is tested
 
 enum PieceName {Sq,LG,RG,LS,RS,I,T};
-
 const int wMAX = 20;     // maximum width of the game board
 const int hMAX = 15;     // maximum total height of the game board
+
+struct TetrisScore {
+    int toprow, empties, clears, blocked;
+
+    TetrisScore() :
+        toprow(-10),
+        empties(-4),
+        clears(100),
+        blocked(-3)
+    {}
+};
 
 class Tetris {
   private:
@@ -86,13 +96,15 @@ class Tetris {
     bool board[hMAX][wMAX]; // the game board; board[i][j] true <=> occupied
     int piececount;         // number of pieces that has been used so far
     int rowscleared;        // number of rows cleared so far
+
+    TetrisScore score;      // coefficients for evaluate()
   public:
     void clearrows ( );
     void displayboard ( );
     void letitfall (PieceName piece, int orientation, int position);
     void infothrowpiece (PieceName piece, int orientation, int position);
     bool endofgame ( );
-    Tetris (int height, int width);
+    Tetris (int height, int width, TetrisScore score);
     Tetris ( );
     void statistics ( );
     int possibilities (PieceName piece);
@@ -106,7 +118,7 @@ class Tetris {
     int evaluateMonteCarlo(PieceName piece, int themove);
     int getPieceCount();
     void printinfo(PieceName piece, int orientation, int position);
-    void domove(PieceName piece, int themove, bool info = true);
+    void domove(PieceName piece, int themove, bool info);
     int getblockedempties();
     int evaluate();
     int evaluatemove(PieceName piece, int themove);
@@ -121,10 +133,13 @@ Tetris::Tetris ( ) {
   for ( i = 0; i < hMAX; i++ )
     for ( j = 0; j < wMAX; j++ )
       board[i][j] = false;
+
+  TetrisScore sc;
+  score = sc;
 }//Tetris::Tetris
 
 // constructor
-Tetris::Tetris (int height, int width) {
+Tetris::Tetris (int height, int width, TetrisScore score) {
   int i, j;
   piececount = 0;
   rowscleared = 0;
@@ -139,6 +154,8 @@ Tetris::Tetris (int height, int width) {
   for ( i = 0; i < hMAX; i++ )
     for ( j = 0; j < wMAX; j++ )
       board[i][j] = false;
+
+  this->score = score;
 }//Tetris::Tetris
 
 // some statistics
@@ -530,11 +547,6 @@ int Tetris::getblockedempties() {
     return blocked;
 }
 
-const int SCORE_TOPROW      = -10;
-const int SCORE_EMPTIES     = -4;
-const int SCORE_CLEARS      = 100;
-const int SCORE_BLOCEKED    = -3;
-
 //give the board a score, higher is better
 int Tetris::evaluate() {
     bool therow[wMAX];
@@ -549,10 +561,10 @@ int Tetris::evaluate() {
     block = getblockedempties();
 
     return
-        SCORE_TOPROW * nr
-        + SCORE_EMPTIES * emp
-        + SCORE_CLEARS * rowscleared
-        + SCORE_BLOCEKED * block;
+        score.toprow * nr
+        + score.empties * emp
+        + score.clears * rowscleared
+        + score.blocked * block;
 }//Tetris::evaluate
 
 //give themove a score, based on state after the move
@@ -605,10 +617,10 @@ int Tetris::evaluateMonteCarlo(PieceName piece, int themove){
     int score = 0;
     Tetris tetris = *this;
     Tetris mcTetris;
-    tetris.domove(piece, themove);
+    tetris.domove(piece, themove, false);
     for ( int i = 0; i < MONTE_LOOP; i++ ){
         mcTetris = tetris;
-        mcTetris.playrandomgame( false );
+        mcTetris.playrandomgame(false);
         score += mcTetris.getPieceCount();
     }
     return score;
@@ -629,7 +641,8 @@ int main (int argc, char* argv[ ]) {
   }//if
   int h = atoi (argv[1]);
   int w = atoi (argv[2]);
-  Tetris board (h,w);
+  TetrisScore sc;
+  Tetris board (h,w, sc);
 
   uint seed;
   if ( argc == 4 ) {
