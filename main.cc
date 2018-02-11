@@ -70,13 +70,14 @@
 using namespace std;
 
 enum PieceName {Sq,LG,RG,LS,RS,I,T};
-
+const int MONTECARLO = 1000; //times each move is tested
 const int wMAX = 20;     // maximum width of the game board
 const int hMAX = 15;     // maximum total height of the game board
 
 class Tetris {
   private:
     int h, w;               // actual height and width
+    bool info = true;        // usage of play random game
     bool board[hMAX][wMAX]; // the game board; board[i][j] true <=> occupied
     int piececount;         // number of pieces that has been used so far
     int rowscleared;        // number of rows cleared so far
@@ -94,9 +95,11 @@ class Tetris {
     void randomchoice (PieceName piece, int & orientation, int & position);
     void toprow (bool therow[wMAX], int & numberrow, int & empties, int & totalempties);
     int numberempties (int numberrow);
-    void playrandomgame ( );
-
+    void playrandomgame ( bool info );
     //Added functions
+    void monteCarlo();
+    int evaluateMonteCarlo ( PieceName piece, int themove );
+    int getPieceCount();
     void domove(PieceName piece, int themove);
     int evaluate();
     int evaluatemove(PieceName piece, int themove);
@@ -451,13 +454,14 @@ void getrandompiece (PieceName & piece) {
 }//getrandompiece
 
 //play a random game
-void Tetris::playrandomgame ( ) {
+void Tetris::playrandomgame (bool info) {
   PieceName piece;
   int orientation;
   int position;
   int nr, emp, totemp;
   bool therow[wMAX];
-  displayboard ( );
+  if( info )
+    displayboard ( );
   while ( ! endofgame ( ) ) {
     getrandompiece (piece);                    // obtain some piece
     randomchoice (piece,orientation,position); // how to drop it?
@@ -465,12 +469,14 @@ void Tetris::playrandomgame ( ) {
     clearrows ( );                             // clear rows
 
     // the following output lines can be easily removed
-    infothrowpiece (piece,orientation,position);  // some text
-    displayboard ( );                          // print the board
-    toprow (therow,nr,emp,totemp);             // how is top row?
-    if ( nr != -1 )
-      cout << "Top row " << nr << " has " << emp << " empties (" << totemp
-        << " empties total)" << endl;
+    if ( info ){
+        infothrowpiece (piece,orientation,position);  // some text
+        displayboard ( );                          // print the board
+        toprow (therow,nr,emp,totemp);             // how is top row?
+        if ( nr != -1 )
+          cout << "Top row " << nr << " has " << emp << " empties (" << totemp
+            << " empties total)" << endl;
+    }
   }//while
 }//Tetris::playrandomgame
 
@@ -523,6 +529,7 @@ int Tetris::evaluatemove(PieceName piece, int themove) {
 
 //play a smart(ish) game
 //loop over all
+
 void Tetris::playsmartgame() {
     PieceName piece;
     int numPossible;
@@ -545,6 +552,40 @@ void Tetris::playsmartgame() {
 
 }//Tetris::playsmartgame
 
+void Tetris::monteCarlo(){
+    PieceName piece;
+    int numPossible;
+    int score;
+    int maxScore = 0, bestMove = -1;
+
+    while (! endofgame()) {
+        maxScore = 0, bestMove = -1;
+        numPossible = possibilities(piece);
+        for (int possibleMove = 0; possibleMove < numPossible; possibleMove++) {
+            score = evaluateMonteCarlo(piece, possibleMove);
+            if (score > maxScore || bestMove == -1){
+                maxScore = score;
+                bestMove = possibleMove;
+            }
+        }
+        domove(piece, bestMove);
+    }
+}
+int Tetris::evaluateMonteCarlo(PieceName piece, int themove){
+    int score = 0;
+    Tetris tetris = *this;
+    Tetris mcTetris;
+    tetris.domove(piece, themove);
+    for ( int i = 0; i < MONTECARLO; i++ ){
+        mcTetris = tetris;
+        mcTetris.playrandomgame( false );
+        score += mcTetris.getPieceCount();
+    }
+    return score;
+}
+int Tetris::getPieceCount(){
+        return piececount;
+    }
 int main (int argc, char* argv[ ]) {
   if ( argc != 4 && argc != 5 ) {
     cout << "Usage: " << argv[0] << " <height> <width> < r(andom) | s(mart) | m(onte-carlo) >"
@@ -567,11 +608,15 @@ int main (int argc, char* argv[ ]) {
   string mode = argv[3];
   switch (mode.at(0)) {
     case 'r':
-        board.playrandomgame ( );
+        board.playrandomgame ( true );
         break;
 
     case 's':
         board.playsmartgame();
+        break;
+
+    case 'm':
+        board.monteCarlo();
         break;
   }
 
