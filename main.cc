@@ -70,8 +70,12 @@
 #include <climits>       // for INT_MIN
 using namespace std;
 
+
+enum EvalName {Smart, Montecarlo};
+const int MONTE_LOOP = 1000; //times each move is tested
+
 enum PieceName {Sq,LG,RG,LS,RS,I,T};
-const int MONTECARLO = 1000; //times each move is tested
+
 const int wMAX = 20;     // maximum width of the game board
 const int hMAX = 15;     // maximum total height of the game board
 
@@ -99,15 +103,14 @@ class Tetris {
     void playrandomgame ( bool info );
 
     //Added functions
-    void monteCarlo();
-    int evaluateMonteCarlo ( PieceName piece, int themove );
+    int evaluateMonteCarlo(PieceName piece, int themove);
     int getPieceCount();
     void printinfo(PieceName piece, int orientation, int position);
     void domove(PieceName piece, int themove, bool info = true);
     int getblockedempties();
     int evaluate();
     int evaluatemove(PieceName piece, int themove);
-    void playsmartgame();
+    void playgame(EvalName);
 };//Tetris
 
 // default constructor
@@ -562,8 +565,7 @@ int Tetris::evaluatemove(PieceName piece, int themove) {
 
 //play a smart(ish) game
 //loop over all
-
-void Tetris::playsmartgame() {
+void Tetris::playgame(EvalName eval) {
     PieceName piece;
     int numPossible;
     int score;
@@ -571,11 +573,20 @@ void Tetris::playsmartgame() {
 
     while (! endofgame()) {
         maxScore = INT_MIN; bestMove = 0;
-        getrandompiece(piece);
 
+        getrandompiece(piece);
         numPossible = possibilities(piece);
         for (int possibleMove = 0; possibleMove < numPossible; possibleMove++) {
-            score = evaluatemove(piece, possibleMove);
+
+            switch (eval){
+                case Montecarlo:
+                    score = evaluateMonteCarlo(piece, possibleMove);
+                    break;
+
+                case Smart:
+                    score = evaluatemove(piece, possibleMove);
+                    break;
+            }
             //cout << "Move " << possibleMove << " has score " << score << endl;
             if (score > maxScore){
                 maxScore = score;
@@ -587,27 +598,7 @@ void Tetris::playsmartgame() {
         domove(piece, bestMove, true);
     }
 
-}//Tetris::playsmartgame
-
-void Tetris::monteCarlo(){
-    PieceName piece;
-    int numPossible;
-    int score;
-    int maxScore = 0, bestMove = -1;
-
-    while (! endofgame()) {
-        maxScore = 0, bestMove = -1;
-        numPossible = possibilities(piece);
-        for (int possibleMove = 0; possibleMove < numPossible; possibleMove++) {
-            score = evaluateMonteCarlo(piece, possibleMove);
-            if (score > maxScore || bestMove == -1){
-                maxScore = score;
-                bestMove = possibleMove;
-            }
-        }
-        domove(piece, bestMove, true);
-    }
-}
+}//Tetris::playgame
 
 
 int Tetris::evaluateMonteCarlo(PieceName piece, int themove){
@@ -615,7 +606,7 @@ int Tetris::evaluateMonteCarlo(PieceName piece, int themove){
     Tetris tetris = *this;
     Tetris mcTetris;
     tetris.domove(piece, themove);
-    for ( int i = 0; i < MONTECARLO; i++ ){
+    for ( int i = 0; i < MONTE_LOOP; i++ ){
         mcTetris = tetris;
         mcTetris.playrandomgame( false );
         score += mcTetris.getPieceCount();
@@ -655,11 +646,11 @@ int main (int argc, char* argv[ ]) {
         break;
 
     case 's':
-        board.playsmartgame();
+        board.playgame(Smart);
         break;
 
     case 'm':
-        board.monteCarlo();
+        board.playgame(Montecarlo);
         break;
   }
 
