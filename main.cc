@@ -67,6 +67,7 @@
 #include <iostream>
 #include <ctime>         // for time stuff
 #include <cstdlib>       // for rand ( )
+#include <climits>       // for INT_MIN
 using namespace std;
 
 enum PieceName {Sq,LG,RG,LS,RS,I,T};
@@ -92,12 +93,14 @@ class Tetris {
     int possibilities (PieceName piece);
     void computeorandpos (PieceName piece, int & orientation, int & position, int themove);
     void randomchoice (PieceName piece, int & orientation, int & position);
-    void toprow (bool therow[wMAX], int & numberrow, int & empties, int & totalempties);
+    void toprow (bool therow[wMAX], int & numberrow, int & empties);
     int numberempties (int numberrow);
     void playrandomgame ( );
 
     //Added functions
-    void domove(PieceName piece, int themove);
+    void printinfo(PieceName piece, int orientation, int position);
+    void domove(PieceName piece, int themove, bool info = true);
+    int getblockedempties();
     int evaluate();
     int evaluatemove(PieceName piece, int themove);
     void playsmartgame();
@@ -151,14 +154,12 @@ int Tetris::numberempties (int numberrow) {
 // and copies this row into therow; its row index being numberrow
 // totalempties contains number of empties in the whole board
 // if this is -1, the whole field is empty
-void Tetris::toprow (bool therow[wMAX], int & numberrow, int & empties, int & totalempties) {
+void Tetris::toprow (bool therow[wMAX], int & numberrow, int & empties) {
   int i, j, theempties;
   numberrow = -1;
   empties = w;
-  totalempties = 0;
   for ( i = 0; i < h; i++ ) {
     theempties = numberempties (i);
-    totalempties += theempties;
     if ( theempties < w ) {
       for ( j = 0; j < w; j++ )
         therow[j] = board[i][j];
@@ -403,30 +404,30 @@ void Tetris::computeorandpos (PieceName piece, int & orientation, int & position
     case LS:
     case RS: if ( themove > w-3 ) {
                orientation = 1;
-	       position = themove - (w-2);
-	     }//if
+               position = themove - (w-2);
+             }//if
 	     break;
     case I:  if ( themove > w-4 ) {
                orientation = 1;
-	       position = themove - (w-3);
-	     }//if
+               position = themove - (w-3);
+             }//if
 	     break;
     case Sq: break;
     case T:
     case LG:
     case RG: if ( themove > 3*w-6 ) {
                orientation = 3;
-	       position = themove - (3*w-5);
-	     }//if
-	     else if ( themove > 2*w-4 ) {
+               position = themove - (3*w-5);
+             }//if
+             else if ( themove > 2*w-4 ) {
                orientation = 2;
-	       position = themove - (2*w-3);
-	     }//if
+               position = themove - (2*w-3);
+             }//if
              else if ( themove > w-3 ) {
                orientation = 1;
-	       position = themove - (w-2);
-	     }//if
-	     break;
+               position = themove - (w-2);
+             }//if
+         break;
   }//switch
 }//Tetris::computeorandpos
 
@@ -455,8 +456,6 @@ void Tetris::playrandomgame ( ) {
   PieceName piece;
   int orientation;
   int position;
-  int nr, emp, totemp;
-  bool therow[wMAX];
   displayboard ( );
   while ( ! endofgame ( ) ) {
     getrandompiece (piece);                    // obtain some piece
@@ -464,13 +463,7 @@ void Tetris::playrandomgame ( ) {
     letitfall (piece,orientation,position);    // let it go
     clearrows ( );                             // clear rows
 
-    // the following output lines can be easily removed
-    infothrowpiece (piece,orientation,position);  // some text
-    displayboard ( );                          // print the board
-    toprow (therow,nr,emp,totemp);             // how is top row?
-    if ( nr != -1 )
-      cout << "Top row " << nr << " has " << emp << " empties (" << totemp
-        << " empties total)" << endl;
+    printinfo(piece,orientation,position);
   }//while
 }//Tetris::playrandomgame
 
@@ -481,43 +474,81 @@ void Tetris::playrandomgame ( ) {
 //
 // ////////////////////////////////////
 
+
+//print some info about the board
+void Tetris::printinfo(PieceName piece, int orientation, int position) {
+    int nr, emp;
+    bool therow[wMAX];
+
+    infothrowpiece (piece,orientation,position); // some text
+    displayboard ( );                            // print the board
+    toprow (therow,nr,emp);                      // how is top row?
+    if ( nr != -1 )
+      cout << "Top row " << nr << " has " << emp << " empties" << endl;
+}//Tetris::printinfo
+
 //do the given move
-void Tetris::domove(PieceName piece, int themove) {
+void Tetris::domove(PieceName piece, int themove, bool info) {
     int orientation, position;
-    int nr, emp, totemp;
     bool therow[wMAX];
 
     computeorandpos(piece, orientation, position, themove);
     letitfall(piece, orientation, position);
     clearrows();
 
-    // the following output lines can be easily removed
-    infothrowpiece (piece,orientation,position);  // some text
-    displayboard ( );                          // print the board
-    toprow (therow,nr,emp,totemp);                    // how is top row?
-    if ( nr != -1 )
-      cout << "Top row " << nr << " has " << emp << " empties (" << totemp
-        << " empties total)" << endl;
+    if (info)
+        printinfo(piece, orientation, position);
+}//Tetris::domove
+
+//return the amount of empties that have non-empties above them
+int Tetris::getblockedempties() {
+    int blocked = 0;
+    bool isFree[wMAX];
+    for (int i=0; i<w; i++)
+        isFree[i] = true;
+
+    for (int row = 0; row < w; row++) {
+        for (int col=0; col < h; col++) {
+            if (board[col][row]) {
+                isFree[col] = false;
+            } else if (!isFree[col]) {
+                blocked += 1;
+            }
+        }
+    }
+    return blocked;
 }
+
+const int SCORE_TOPROW      = -10;
+const int SCORE_EMPTIES     = -4;
+const int SCORE_CLEARS      = 100;
+const int SCORE_BLOCEKED    = -3;
 
 //give the board a score, higher is better
 int Tetris::evaluate() {
     bool therow[wMAX];
-    int nr, emp, totemp;
+    int nr, emp;
+    int block;
 
     if ( endofgame() )
-        return 0;
+        return INT_MIN;
 
-    toprow (therow,nr,emp,totemp);
+    toprow (therow,nr,emp);
 
-    return -10*nr;
+    block = getblockedempties();
+
+    return
+        SCORE_TOPROW * nr
+        + SCORE_EMPTIES * emp
+        + SCORE_CLEARS * rowscleared
+        + SCORE_BLOCEKED * block;
 }//Tetris::evaluate
 
 //give themove a score, based on state after the move
 int Tetris::evaluatemove(PieceName piece, int themove) {
     Tetris tetris = *this;
 
-    tetris.domove(piece, themove);
+    tetris.domove(piece, themove, false);
     return tetris.evaluate();
 }
 
@@ -527,23 +558,28 @@ void Tetris::playsmartgame() {
     PieceName piece;
     int numPossible;
     int score;
-    int maxScore = 0, bestMove = -1;
+    int maxScore, bestMove;
 
     while (! endofgame()) {
+        maxScore = INT_MIN; bestMove = 0;
         getrandompiece(piece);
 
         numPossible = possibilities(piece);
-        for (int possibleMove; possibleMove < numPossible; possibleMove++) {
+        for (int possibleMove = 0; possibleMove < numPossible; possibleMove++) {
             score = evaluatemove(piece, possibleMove);
-            if (score > maxScore || bestMove == -1){
+            //cout << "Move " << possibleMove << " has score " << score << endl;
+            if (score > maxScore){
                 maxScore = score;
                 bestMove = possibleMove;
+
+                //cout << "\tnew best!" << endl;
             }
         }
-        domove(piece, bestMove);
+        domove(piece, bestMove, true);
     }
 
 }//Tetris::playsmartgame
+
 
 int main (int argc, char* argv[ ]) {
   if ( argc != 4 && argc != 5 ) {
@@ -557,17 +593,18 @@ int main (int argc, char* argv[ ]) {
   int w = atoi (argv[2]);
   Tetris board (h,w);
 
-
+  uint seed;
   if ( argc == 4 ) {
-    srand (time (NULL));
+    seed = time (NULL);
   } else {
-    srand (atoi (argv[4]));
+    seed = atoi (argv[4]);
   }
+  srand (seed);
 
   string mode = argv[3];
   switch (mode.at(0)) {
     case 'r':
-        board.playrandomgame ( );
+        board.playrandomgame();
         break;
 
     case 's':
@@ -576,6 +613,7 @@ int main (int argc, char* argv[ ]) {
   }
 
   board.statistics ( );
+  cout << "Seed for this game was: " << seed << endl;
 
   return 0;
 
