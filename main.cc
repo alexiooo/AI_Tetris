@@ -82,10 +82,10 @@ struct TetrisScore {
     int toprow, empties, clears, blocked;
 
     TetrisScore() :
-        toprow(-10),
-        empties(-4),
-        clears(100),
-        blocked(-3)
+        toprow(-5),
+        empties(1),
+        clears(2),
+        blocked(0)
     {}
     TetrisScore(int t, int e, int c, int b) :
         toprow(t), empties(e), clears(c), blocked(b) {}
@@ -689,27 +689,27 @@ int calculateMetrics(int argc, char* argv[]) {
 
 
 int play (int argc, char* argv[ ]) {
-  if ( argc != 4 && argc != 5 ) {
+  if ( argc != 5 && argc != 6 ) {
     cout << "Usage: " << argv[0] << " play <height> <width> < r(andom) | s(mart) | m(onte-carlo) >"
          << endl;
     cout << "Or:    " << argv[0] << " play <height> <width> < r(andom) | s(mart) | m(onte-carlo) > <seed>"
          << endl;
     return 1;
   }//if
-  int h = atoi (argv[1]);
-  int w = atoi (argv[2]);
+  int h = atoi (argv[2]);
+  int w = atoi (argv[3]);
   TetrisScore sc;
   Tetris board (h,w, sc);
 
   uint seed;
-  if ( argc == 4 ) {
+  if ( argc == 5 ) {
     seed = time (NULL);
   } else {
-    seed = atoi (argv[4]);
+    seed = atoi (argv[5]);
   }
   srand (seed);
 
-  string mode = argv[3];
+  string mode = argv[4];
   switch (mode.at(0)) {
     case 'r':
         board.playrandomgame();
