@@ -701,7 +701,7 @@ int play (int argc, char* argv[ ]) {
   TetrisScore sc;
   Tetris board (h,w, sc);
 
-  uint seed;
+  int seed;
   if ( argc == 5 ) {
     seed = time (NULL);
   } else {
