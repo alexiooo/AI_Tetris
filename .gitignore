@@ -4,3 +4,4 @@ tmp/*
 *.cbp
 *.layout
 *.depend
+*.stackdump
