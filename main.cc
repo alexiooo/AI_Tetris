@@ -89,16 +89,17 @@ const int wMAX = 20;     // maximum width of the game board
 const int hMAX = 15;     // maximum total height of the game board
 
 struct TetrisScore {
-    int toprow, empties, clears, blocked;
+    int toprow, empties, clears, blocked, heightDiff;
 
     TetrisScore() :
-        toprow(-5),
-        empties(1),
-        clears(10),
-        blocked(0)
+        toprow(-10),
+        empties(50),
+        clears(150),
+        blocked(-200),
+        heightDiff(-10)
     {}
-    TetrisScore(int t, int e, int c, int b) :
-        toprow(t), empties(e), clears(c), blocked(b) {}
+    TetrisScore(int t, int e, int c, int b, int d) :
+        toprow(t), empties(e), clears(c), blocked(b), heightDiff(d) {}
 };
 
 class Tetris {
@@ -134,7 +135,7 @@ class Tetris {
     int getPieceCount();
     void printinfo(PieceName piece, int orientation, int position);
     void domove(PieceName piece, int themove);
-    int getblockedempties();
+    void getblockedempties(int & blocked, int & heightDiff);
     int evaluate();
     int evaluatemove(PieceName piece, int themove);
     void playgame(EvalName);
@@ -521,20 +522,22 @@ void Tetris::playrandomgame () {
 // print some info about the board
 void Tetris::printinfo(PieceName piece, int orientation, int position) {
     int nr, emp;
+    int block, diff;
     bool therow[wMAX];
 
     infothrowpiece (piece,orientation,position); // some text
     displayboard ( );                            // print the board
     toprow (therow,nr,emp);                      // how is top row?
+    getblockedempties(block, diff);
     if ( nr != -1 )
       cout << "Top row " << nr << " has " << emp << " empties | "
-        << getblockedempties() << " blocked empties" << endl;
+        << block << " blocked empties | " << diff << " height difference"
+        << endl;
 }//Tetris::printinfo
 
 // do the given move
 void Tetris::domove(PieceName piece, int themove) {
     int orientation, position;
-    bool therow[wMAX];
 
     computeorandpos(piece, orientation, position, themove);
     letitfall(piece, orientation, position);
@@ -545,42 +548,49 @@ void Tetris::domove(PieceName piece, int themove) {
 }//Tetris::domove
 
 // return the amount of empties that have non-empties above them
-int Tetris::getblockedempties() {
-    int blocked = 0;
-    bool isFree[wMAX];
+void Tetris::getblockedempties(int & blocked, int & heightDiff) {
+    blocked = 0; heightDiff = 0;
+    int colHeight[wMAX];
     for (int i=0; i<w; i++)
-        isFree[i] = true;
+        colHeight[i] = -1;
 
     for (int row = h-1; row >= 0; row--) {
         for (int col = 0; col < w; col++) {
             if (board[row][col]) {
-                isFree[col] = false;
-            } else if (!isFree[col]) {
+                if (colHeight[col] == -1){
+                    colHeight[col] = row;
+                }
+            } else if (colHeight[col] > 0) {
                 blocked += 1;
             }
         }
     }
-    return blocked;
+    for (int col = 1; col < w; col++) {
+        int d = colHeight[col] - colHeight[col-1];
+        if (d<0) d = -d;
+        heightDiff += d;
+    }
 }
 
 // give the board a score, higher is better
 int Tetris::evaluate() {
     bool therow[wMAX];
     int nr, emp;
-    int block;
+    int block, diff;
 
     if ( endofgame() )
         return INT_MIN;
 
     toprow (therow,nr,emp);
 
-    block = getblockedempties();
+    getblockedempties(block, diff);
 
     return
         score.toprow * nr*nr
         + score.empties * emp
         + score.clears * rowscleared
-        + score.blocked * block;
+        + score.blocked * block
+        + score.heightDiff * diff;
 }//Tetris::evaluate
 
 // give themove a score, based on state after the move
@@ -649,53 +659,6 @@ int Tetris::getPieceCount(){
     return piececount;
 }
 
-int calculateMetrics(int argc, char* argv[]) {
-    int totalscore;
-
-    if (argc < 4) {
-        cout << "Usage: " << argv[0] << " metrics <height> <width> <start> <stop> <loops> <seed>"
-            << endl;
-        return 1;
-    }
-
-    int h = atoi (argv[2]);
-    int w = atoi (argv[3]);
-
-    int start = atoi(argv[4]);
-    int limit = atoi(argv[5]);
-    int loop = atoi(argv[6]);
-
-
-
-    if (argc > 7)
-        srand(atoi(argv[7]));
-    else
-        srand(time(NULL));
-
-    if (start > limit) {
-        cout << "Error: given start was bigger than stop";
-        return 3;
-    }
-
-
-    for(int a=start; a<limit; a++)
-        for(int b=start; b<limit; b++)
-        for(int c=start; c<limit; c++)
-        for(int d=start; d<limit; d++) {
-            TetrisScore sc(a,b,c,d);
-            totalscore = 0;
-
-            for(int i=0; i<loop; i++) {
-                Tetris board(h, w, sc);
-                board.info = false;
-                board.playgame(Smart);
-                totalscore += board.getPieceCount();
-            }
-            cout << a << "," << b << "," << c << "," << d << "," << totalscore << "\n";
-        }
-    return 0;
-}
-
 int benchCarlo(int argc, char* argv[ ]) {
     int totalscore;
     Tetris kopie;
@@ -738,8 +701,8 @@ int benchCarlo(int argc, char* argv[ ]) {
 }
 
 int benchSmart(int argc, char* argv[ ]) {
-    if ( argc < 9 || argc > 10 ) {
-        cout << "Usage: " << argv[0] << " smart <height> <width> <toprow> <empties> <clears> <blocked> <loops> <seed>"
+    if ( argc < 10 || argc > 11 ) {
+        cout << "Usage: " << argv[0] << " smart <height> <width> <toprow> <empties> <clears> <blocked> <heightDiff> <loops> <seed>"
             << endl;
         return 1;
     }//if
@@ -748,37 +711,48 @@ int benchSmart(int argc, char* argv[ ]) {
     TetrisScore sc(atoi (argv[4]),
                    atoi (argv[5]),
                    atoi (argv[6]),
-                   atoi (argv[7]));
-    Tetris board (h,w, sc);
-
-    int loops = atoi (argv[8]);
+                   atoi (argv[7]),
+                   atoi (argv[8]));
+    int loops = atoi (argv[9]);
     if (loops < 1) loops = 1;
 
+    Tetris board (h,w, sc);
     board.info = loops == 1;
     Tetris kopie;
 
-    if ( argc < 10 ) {
+    if ( argc < 11 ) {
         srand( time (NULL) );
     } else {
-        srand( atoi (argv[9]) );
+        srand( atoi (argv[10]) );
     }
 
-
-
-    int totalscore = 0;
-    for (int i=0; i<loops; i++){
+    int sum=0;
+    double avg=0.0, prevavg = 0.0, dev = 0.0;
+    for (int n=1; n<=loops; n++){
         kopie = board;
         kopie.playgame(EvalName::Smart);
-        totalscore += kopie.getPieceCount();
+        int score = kopie.getPieceCount();
+        sum += score;
 
-        if(kopie.info)
+        if(kopie.info) {
             kopie.statistics();
+        } else {
+            if(n==1) cout << score;
+            else     cout << "," << score;
+        }
+
+        avg = sum / n;
+        dev += (score - prevavg) * (score - avg);
+        prevavg = avg;
     }
+    cout << endl;
+
     if (!board.info){
         cout << sc.toprow << ", " << sc.empties << ", " << sc.clears << ", "
-            << sc.blocked << ", " << loops << ", " << totalscore << endl;
-        cout << "Avg: " << (double) totalscore / loops << " pieces per game"
+            << sc.blocked << ", " << loops << ", " << sum << ", " << dev << endl;
+        cout << "Avg: " << (double) sum / loops << " pieces per game"
             << endl;
+        cout << "Variance: " << dev << endl;
     }
     return 0;
 }
@@ -839,9 +813,6 @@ int main(int argc, char* argv[ ]) {
         case 'p':
             return play(argc, argv);
 
-        case 'm':
-            return calculateMetrics(argc, argv);
-
         case 'b':
             return benchCarlo(argc, argv);
 
@@ -851,7 +822,8 @@ int main(int argc, char* argv[ ]) {
         default:
             cout << argv[0] << " " << command << " not recognized, try:" << endl
                 << argv[0] << " play" << endl
-                << argv[0] << " metrics" << endl;
+                << argv[0] << " benchCarlo" << endl
+                << argv[0] << " smart" << endl;
             return 2;
     }
 }
