@@ -527,7 +527,8 @@ void Tetris::printinfo(PieceName piece, int orientation, int position) {
     displayboard ( );                            // print the board
     toprow (therow,nr,emp);                      // how is top row?
     if ( nr != -1 )
-      cout << "Top row " << nr << " has " << emp << " empties" << endl;
+      cout << "Top row " << nr << " has " << emp << " empties | "
+        << getblockedempties() << " blocked empties" << endl;
 }//Tetris::printinfo
 
 // do the given move
@@ -550,9 +551,9 @@ int Tetris::getblockedempties() {
     for (int i=0; i<w; i++)
         isFree[i] = true;
 
-    for (int row = 0; row < w; row++) {
-        for (int col=0; col < h; col++) {
-            if (board[col][row]) {
+    for (int row = h-1; row >= 0; row--) {
+        for (int col = 0; col < w; col++) {
+            if (board[row][col]) {
                 isFree[col] = false;
             } else if (!isFree[col]) {
                 blocked += 1;
@@ -576,7 +577,7 @@ int Tetris::evaluate() {
     block = getblockedempties();
 
     return
-        score.toprow * nr
+        score.toprow * nr*nr
         + score.empties * emp
         + score.clears * rowscleared
         + score.blocked * block;
@@ -736,6 +737,52 @@ int benchCarlo(int argc, char* argv[ ]) {
     return 0;
 }
 
+int benchSmart(int argc, char* argv[ ]) {
+    if ( argc < 9 || argc > 10 ) {
+        cout << "Usage: " << argv[0] << " smart <height> <width> <toprow> <empties> <clears> <blocked> <loops> <seed>"
+            << endl;
+        return 1;
+    }//if
+    int h = atoi (argv[2]);
+    int w = atoi (argv[3]);
+    TetrisScore sc(atoi (argv[4]),
+                   atoi (argv[5]),
+                   atoi (argv[6]),
+                   atoi (argv[7]));
+    Tetris board (h,w, sc);
+
+    int loops = atoi (argv[8]);
+    if (loops < 1) loops = 1;
+
+    board.info = loops == 1;
+    Tetris kopie;
+
+    if ( argc < 10 ) {
+        srand( time (NULL) );
+    } else {
+        srand( atoi (argv[9]) );
+    }
+
+
+
+    int totalscore = 0;
+    for (int i=0; i<loops; i++){
+        kopie = board;
+        kopie.playgame(EvalName::Smart);
+        totalscore += kopie.getPieceCount();
+
+        if(kopie.info)
+            kopie.statistics();
+    }
+    if (!board.info){
+        cout << sc.toprow << ", " << sc.empties << ", " << sc.clears << ", "
+            << sc.blocked << ", " << loops << ", " << totalscore << endl;
+        cout << "Avg: " << (double) totalscore / loops << " pieces per game"
+            << endl;
+    }
+    return 0;
+}
+
 
 int play (int argc, char* argv[ ]) {
   if ( argc < 5 || argc > 6 ) {
@@ -797,6 +844,9 @@ int main(int argc, char* argv[ ]) {
 
         case 'b':
             return benchCarlo(argc, argv);
+
+        case 's':
+            return benchSmart(argc, argv);
 
         default:
             cout << argv[0] << " " << command << " not recognized, try:" << endl
