@@ -686,7 +686,7 @@ int benchCarlo(int argc, char* argv[ ]) {
     if (games < 1) games = 1;
 
     int seed;
-    if ( argc == 7 ) {
+    if ( argc < 7 ) {
         seed = time (NULL);
     } else {
         seed = atoi (argv[6]);
@@ -707,7 +707,7 @@ int benchCarlo(int argc, char* argv[ ]) {
         if(kopie.info) {
             kopie.statistics();
         } else {
-            if(n==1) cout << score;
+            if(i==0) cout << score;
             else     cout << "," << score;
         }
     }
@@ -759,7 +759,7 @@ int benchSmart(int argc, char* argv[ ]) {
         if(kopie.info) {
             kopie.statistics();
         } else {
-            if(n==1) cout << score;
+            if(i==0) cout << score;
             else     cout << "," << score;
         }
     }
