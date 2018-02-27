@@ -1,0 +1,100 @@
+
+\documentclass[10pt]{article}
+
+\parindent=0pt
+
+\usepackage{fullpage}
+
+\frenchspacing
+
+\usepackage{microtype}
+
+\usepackage[english,dutch]{babel}
+
+\usepackage{graphicx}
+
+\usepackage{listings}
+
+\lstset{language=C++, showstringspaces=false, basicstyle=\small,
+  numbers=left, numberstyle=\tiny, numberfirstline=false, breaklines=true,
+  stepnumber=1, tabsize=8, 
+  commentstyle=\ttfamily, identifierstyle=\ttfamily,
+  stringstyle=\itshape}
+
+\usepackage[setpagesize=false,colorlinks=true,linkcolor=red,urlcolor=blue,pdftitle={Het grote probleem},pdfauthor={Victor Erslag}]{hyperref}
+
+\author{Victor Erslag \and Peter Robleem}
+\title{Het grote probleem}
+
+\begin{document}
+
+\selectlanguage{dutch}
+
+\maketitle
+
+\section{Inleiding} 
+
+Dit \emph{veel te korte} verslag gaat over een groot probleem.
+
+\section{Uitleg probleem}
+
+Het probleem wat wij in dit onderzoek aanpakken is een van de bekendste computer spellen ter wereld: Tetris. Hierbij is het doel om zo ver mogelijk te komen in het spel waarbij de versie die we spelen ons alleen toestaat een rotatie van een stuk te kiezen en een column om in te vallen. Wegens de hoeveelheid stukken en mogelijke configuraties is het praktisch onmogelijk/onwenselijk om een complete spelboom te maken. Dus moeten we op een slimmere manier te werk gaan.
+
+\section{Relevant werk}
+
+De Stelling van Puk (zie~\cite{pukkie}) zegt dat 
+kabouters doorgaans klein zijn. Daarom dragen ze overigens rode mutsjes.
+
+\section{Aanpak}
+
+Om het probleem aan te pakken hebben we gebruik gemaakt van de voorbeeld code die te vinden is op de site. We hebben de play random game functie gebruikt voor een Monte-Carlo algoritme die voor elke set 1000 compleet random potjes speelt om te kijken welke set het grootste winpercentage oplevert. Ten tweede hebben we ook nog een slim algoritme zelf ontwikkeld die werkt op basis van 4 parameters: Toprow, aantal lege vakjes toprow, lege vakjes met een vakje erboven in dezelfde column. Bij elke zet die gedaan wordt door dit algoritme beschouwen we het bord na elke mogelijke zet wat we een score geven doormiddel van een beoordelingsfunctie. De zet met de hoogste score wordt aangepakt. 
+
+
+\section{Implementatie}
+
+We hebben gewerkt met C++. Voor de slim en Monte-Carlo functie hebben we gebruikt gemaakt van de possibilities functie die in de geleverde code zat die het aantal mogelijke zetten berekenend hiervan geven we het stuk, orientatie en positie door aan een evualatie functie voor of Monte-Carlo of Slim. De evaluatie funcite werkt met de eerder genoemde 4 parameters : Toprow, aantal lege vakjes toprow, lege vakjes met een vakje erboven in dezelfde column. Die met zekere coefficienten een score op leveren. In deze slimme evualatie functie wordt een kopie gemaakt van het Tetris object en gekeken naar de score van het bord nadat de zet gedaan is. Bij de evaluatie functie van Monte-Carlo wordt er per zet 1000 keer op een kopie van het Tetris object een Random spel uitgespeeld doormiddel van de bijgeleverde PlayRandomGame functie waarbij de score wordt bepaald door het gemiddelde van de potjes.
+
+De coefficienten hebben we expirimenteel bepaald.
+
+\section{Experimenten}
+
+Voor het berekenenen van de coefficienten hebben we alle coefficienten een waarde van tussen de -5 en 5 aan laten nemen en met die coefficienten in de evaluatie functie 100 potjes te laten spelen waarvan wij het gemiddelde als score zien.
+
+
+De resultaten van de experimenten zijn te
+vinden in onderstaande tabel:
+
+\begin{center}
+\begin{tabular}{l|l|l}
+experiment & tijd (sec) & uitslag\\
+\hline
+1 & 10 & $-7$\\
+2 & 42 & 123
+\end{tabular}
+\end{center}
+Hoe verklaren we dit? En waar is de grafiek?
+
+\section{Conclusie}
+
+Leuk onderzoek, veelbelovend ook. Het ging helaas 
+fout als de testopstelling niet verlicht was.
+In de toekomst doen we dat anders.
+
+\begin{thebibliography}{XX}
+
+\bibitem{pukkie}
+P.~Puk, Kabouters in de Tweede Kamer,
+Ons Tijdschrift 42 (2017) 12--34.
+
+\end{thebibliography}
+
+\section*{Appendix: Code}
+
+Er is gebruik gemaakt van de \href{http://www.liacs.leidenuniv.nl/~kosterswa/AI/iets.cc}{\underline{skeletcode}} die te vinden is via
+de website van het college.
+De code van het programma is als volgt:
+
+\smallskip
+
+
+\end{document}
