@@ -659,8 +659,16 @@ int Tetris::getPieceCount(){
     return piececount;
 }
 
+void runningAverage(int score, int & sum, double & avg, double & dev, int & n) {
+    double prevavg = avg;
+
+    n += 1;
+    sum += score;
+    avg = sum / n;
+    dev += (score - prevavg) * (score - avg);
+}
+
 int benchCarlo(int argc, char* argv[ ]) {
-    int totalscore;
     Tetris kopie;
 
     if ( argc != 6 && argc != 7){
@@ -672,11 +680,10 @@ int benchCarlo(int argc, char* argv[ ]) {
     int w = atoi (argv[3]);
     TetrisScore sc;
     Tetris board (h,w, sc);
-    board.info = false;
-
 
     board.monte_loop = atoi (argv[4]);
     int games = atoi (argv[5]);
+    if (games < 1) games = 1;
 
     int seed;
     if ( argc == 7 ) {
@@ -686,17 +693,31 @@ int benchCarlo(int argc, char* argv[ ]) {
     }
     srand (seed);
 
-    time_t start = time ( nullptr );
+    board.info = games == 1;
+
+    int sum=0, n=0;
+    double avg=0.0, dev = 0.0;
     for (int i=0; i<games; i++){
         kopie = board;
         kopie.playgame(Montecarlo);
-        totalscore += kopie.getPieceCount();
+
+        int score = kopie.getPieceCount();
+        runningAverage(score, sum, avg, dev, n);
+
+        if(kopie.info) {
+            kopie.statistics();
+        } else {
+            if(n==1) cout << score;
+            else     cout << "," << score;
+        }
     }
-    time_t stop = time ( nullptr );
+    cout << endl;
 
-    cout << "games, monte_loop, time, score (total)" << endl;
-    cout << games << ", " << board.monte_loop << ", " << stop-start << ", " << totalscore << endl;
-
+    if (!board.info) {
+        //cout << "height, width, monte_loop, games, score (total), average, variance" << endl;
+        cout << h << ", " << w << ", " << board.monte_loop << ", "
+            << games << ", " << sum << ", " << avg << ", " << dev << endl;
+    }
     return 0;
 }
 
@@ -726,13 +747,14 @@ int benchSmart(int argc, char* argv[ ]) {
         srand( atoi (argv[10]) );
     }
 
-    int sum=0;
-    double avg=0.0, prevavg = 0.0, dev = 0.0;
-    for (int n=1; n<=loops; n++){
+    int sum=0, n=0;
+    double avg=0.0, dev = 0.0;
+    for (int i=0; i<loops; i++){
         kopie = board;
         kopie.playgame(EvalName::Smart);
+
         int score = kopie.getPieceCount();
-        sum += score;
+        runningAverage(score, sum, avg, dev, n);
 
         if(kopie.info) {
             kopie.statistics();
@@ -740,10 +762,6 @@ int benchSmart(int argc, char* argv[ ]) {
             if(n==1) cout << score;
             else     cout << "," << score;
         }
-
-        avg = sum / n;
-        dev += (score - prevavg) * (score - avg);
-        prevavg = avg;
     }
     cout << endl;
 
