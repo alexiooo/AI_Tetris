@@ -21,10 +21,10 @@
   commentstyle=\ttfamily, identifierstyle=\ttfamily,
   stringstyle=\itshape}
 
-\usepackage[setpagesize=false,colorlinks=true,linkcolor=red,urlcolor=blue,pdftitle={Het grote probleem},pdfauthor={Victor Erslag}]{hyperref}
+\usepackage[setpagesize=false,colorlinks=true,linkcolor=red,urlcolor=blue,pdftitle={Kunstmatige Intelligentie bij Tetris},pdfauthor={Alex Keizer}]{hyperref}
 
-\author{Victor Erslag \and Peter Robleem}
-\title{Het grote probleem}
+\author{Bram Honig \and Alex Keizer}
+\title{Kunstmatige Intelligentie bij Tetris}
 
 \begin{document}
 
@@ -33,22 +33,38 @@
 \maketitle
 
 \section{Inleiding} 
+Tetris staat voornamelijk bekend als een spelletje waar je een goed reactievermogen voor moet hebben. Toch zorgen de vele mogelijke manieren om een stuk te plaatsen het feit dat je niet weet welke stukken nog gaan komen ervoor dat het zeker niet recht toe recht aan duidelijk is wat de beste zet op een gegeven moment is. In onze zoektocht zullen wij ons slechts beperken tot het stuk wat we op een gegeven moment ktijgen en niet nog zetten vooruit gaan denken.
 
-Dit \emph{veel te korte} verslag gaat over een groot probleem.
+Waarschijnlijk kennen de meesten de regels van Tetris wel, maar voor de volledigheid zullen we ze nog noemen. Elke zet krijg je een stuk, waar de speler moet bepalen op welke plek en met welke rotatie we het laten vallen. Dit mag, in onze variatie, tijdens het vallen niet veranderd worden. Als een rij compleet vol zit zal deze worden weggehaald en de vakjes erboven zullen een rij naar beneden vallen. Het spel is voorbij wanneer een stuk niet meer op het bord past.
 
-\section{Uitleg probleem}
+\section{Uitleg probleem}\label{probleem}
 
-Het probleem wat wij in dit onderzoek aanpakken is een van de bekendste computer spellen ter wereld: Tetris. Hierbij is het doel om zo ver mogelijk te komen in het spel waarbij de versie die we spelen ons alleen toestaat een rotatie van een stuk te kiezen en een column om in te vallen. Wegens de hoeveelheid stukken en mogelijke configuraties is het praktisch onmogelijk/onwenselijk om een complete spelboom te maken. Dus moeten we op een slimmere manier te werk gaan.
+Elke ``beurt'' krijgen we een (willekeurig) stuk, onze zet bestaat dan vervolgens uit de kolom waar we dat stuk laten vallen en met welke rotatie we dat doen. In onze variatie hebben we dus geen kennis over welk stuk gaat volgen. Aangezien er aanzienlijk wat mogelijkheden zijn is het erg lastig om te bepalen wat de optimaalste zet is. Zelfs als een preciese reeks stukken gegeven wordt is het een NP-hard probleem om de beste zetten te vinden. \cite{nphard} (zie sectie \ref{relevant})
 
-\section{Relevant werk}
+\section{Relevant werk}\label{relevant}
 
 De Stelling van Puk (zie~\cite{pukkie}) zegt dat 
 kabouters doorgaans klein zijn. Daarom dragen ze overigens rode mutsjes.
 
 \section{Aanpak}
 
-Om het probleem aan te pakken hebben we gebruik gemaakt van de voorbeeld code die te vinden is op de site. We hebben de play random game functie gebruikt voor een Monte-Carlo algoritme die voor elke set 1000 compleet random potjes speelt om te kijken welke set het grootste winpercentage oplevert. Ten tweede hebben we ook nog een slim algoritme zelf ontwikkeld die werkt op basis van 4 parameters: Toprow, aantal lege vakjes toprow, lege vakjes met een vakje erboven in dezelfde column. Bij elke zet die gedaan wordt door dit algoritme beschouwen we het bord na elke mogelijke zet wat we een score geven doormiddel van een beoordelingsfunctie. De zet met de hoogste score wordt aangepakt. 
+Als eerste poging is er een Monte-Carlo algoritme gemaakt. Bij elke beurt wordt elke mogelijke zet een vast aantal willekeurige potjes gespeeld. De zet waarbij in al die spelletjes het meeste stukken werden gespeeld wordt gekozen als de beste zet.
 
+Willekeurig spelen is niet erg effici\"{e}nt, dus hebben we ook een ``slim'' algoritme. Zoals gezegd in sectie \ref{probleem} wordt een speelboom al snel erg groot, wij hebben ons dus beperkt tot alle mogelijkheden met het huidige stuk. Elk van deze mogelijkheden wordt ge\"{e}valueerd aan de hand van de volgende punten:
+\begin{itemize}
+
+\item De hoogste rij met bezette vakjes (in het kwadraat)
+
+\item Lege vakjes in de hoogst bezette rij
+
+\item Weggehaalde rijen
+
+\item Lege vakjes met erboven (in dezelfde kolom) ene niet-leeg vakje
+
+\item Het hoogteverschil tussen opeenvolgende rijen
+
+\end{itemize}
+Hoe hoger de stapel wilt, hoe erger het is als hij verder stijgt (je komt immers telkens dichter bij het einde). We hebben dus niet direct het nummer van de hoogste rij gepakt, maar het kwadraat daarvan als meetpunt. Elk van deze punten wordt vervolgens met een coeffic\"{i}ent vermenigvuldigt en bij elkaar opgeteld, dit is de uiteindelijke score voor dat bord (en de zet die tot dat bord heeft geleid). Verder wordt natuurlijk weer de zet met de hoogste score gedaan.
 
 \section{Implementatie}
 
@@ -82,9 +98,13 @@ In de toekomst doen we dat anders.
 
 \begin{thebibliography}{XX}
 
-\bibitem{pukkie}
-P.~Puk, Kabouters in de Tweede Kamer,
-Ons Tijdschrift 42 (2017) 12--34.
+\bibitem{nphard}
+Erik D. Demaine, Susan Hohenberger and David Liben-Nowell, Tetris is
+Hard, Even to Approximate. In Proceedings of the 9th International Computing and
+Combinatorics Conference (COCOON 2003) (2003).
+
+\bibitem{genetic}
+https://www2.informatik.uni-erlangen.de/EN/publication/download/mic.pdf
 
 \end{thebibliography}
 
