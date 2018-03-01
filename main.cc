@@ -767,7 +767,7 @@ int benchSmart(int argc, char* argv[ ]) {
 
     if (!board.info){
         cout << sc.toprow << ", " << sc.empties << ", " << sc.clears << ", "
-            << sc.blocked << ", " << loops << ", " << sum << ", " << dev << endl;
+            << sc.blocked << ", " << sc.heightDiff << loops << ", " << sum << ", " << dev << endl;
         cout << "Avg: " << (double) sum / loops << " pieces per game"
             << endl;
         cout << "Variance: " << dev << endl;
