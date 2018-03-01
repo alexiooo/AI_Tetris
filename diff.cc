@@ -16,12 +16,12 @@
 // Walter Kosters, w.a.kosters@liacs.leidenuniv.nl
 //
 // Hieronder staan alleen de verschillen ten opzichte van aitetris.cc
+// /* ... */ duidt aan dat code ongewijzigd is overgenomen
 
 /* ... */
 #include <climits>       // for INT_MIN
 
 enum EvalName {Smart, Montecarlo};
-const int MONTE_LOOP = 1000; //times each move is tested
 enum PieceName {Sq,LG,RG,LS,RS,I,T};
 
 struct TetrisScore {
@@ -44,6 +44,7 @@ class Tetris {
 
   public:
     bool info = true;       // determines whether info is output to stdout
+    int monte_loop = 1000; //number of games played per move in montecarlo
 
     /* ... */
     Tetris (int height, int width, TetrisScore score);
@@ -88,19 +89,22 @@ void Tetris::playrandomgame () {
 // print some info about the board
 void Tetris::printinfo(PieceName piece, int orientation, int position) {
     int nr, emp;
+    int block, diff;
     bool therow[wMAX];
 
     infothrowpiece (piece,orientation,position); // some text
     displayboard ( );                            // print the board
     toprow (therow,nr,emp);                      // how is top row?
+    getblockedempties(block, diff);
     if ( nr != -1 )
-      cout << "Top row " << nr << " has " << emp << " empties" << endl;
+      cout << "Top row " << nr << " has " << emp << " empties | "
+        << block << " blocked empties | " << diff << " height difference"
+        << endl;
 }//Tetris::printinfo
 
 // do the given move
 void Tetris::domove(PieceName piece, int themove) {
     int orientation, position;
-    bool therow[wMAX];
 
     computeorandpos(piece, orientation, position, themove);
     letitfall(piece, orientation, position);
@@ -111,42 +115,49 @@ void Tetris::domove(PieceName piece, int themove) {
 }//Tetris::domove
 
 // return the amount of empties that have non-empties above them
-int Tetris::getblockedempties() {
-    int blocked = 0;
-    bool isFree[wMAX];
+void Tetris::getblockedempties(int & blocked, int & heightDiff) {
+    blocked = 0; heightDiff = 0;
+    int colHeight[wMAX];
     for (int i=0; i<w; i++)
-        isFree[i] = true;
+        colHeight[i] = -1;
 
-    for (int row = 0; row < w; row++) {
-        for (int col=0; col < h; col++) {
-            if (board[col][row]) {
-                isFree[col] = false;
-            } else if (!isFree[col]) {
+    for (int row = h-1; row >= 0; row--) {
+        for (int col = 0; col < w; col++) {
+            if (board[row][col]) {
+                if (colHeight[col] == -1){
+                    colHeight[col] = row;
+                }
+            } else if (colHeight[col] > 0) {
                 blocked += 1;
             }
         }
     }
-    return blocked;
+    for (int col = 1; col < w; col++) {
+        int d = colHeight[col] - colHeight[col-1];
+        if (d<0) d = -d;
+        heightDiff += d;
+    }
 }
 
 // give the board a score, higher is better
 int Tetris::evaluate() {
     bool therow[wMAX];
     int nr, emp;
-    int block;
+    int block, diff;
 
     if ( endofgame() )
         return INT_MIN;
 
     toprow (therow,nr,emp);
 
-    block = getblockedempties();
+    getblockedempties(block, diff);
 
     return
-        score.toprow * nr
+        score.toprow * nr*nr
         + score.empties * emp
         + score.clears * rowscleared
-        + score.blocked * block;
+        + score.blocked * block
+        + score.heightDiff * diff;
 }//Tetris::evaluate
 
 // give themove a score, based on state after the move
@@ -203,7 +214,7 @@ int Tetris::evaluateMonteCarlo(PieceName piece, int themove){
 
     tetris.info = false;
     tetris.domove(piece, themove);
-    for ( int i = 0; i < MONTE_LOOP; i++ ){
+    for ( int i = 0; i < monte_loop; i++ ){
         mcTetris = tetris;
         mcTetris.playrandomgame();
         score += mcTetris.getPieceCount();
@@ -215,59 +226,8 @@ int Tetris::getPieceCount(){
     return piececount;
 }
 
-int calculateMetrics(int argc, char* argv[]) {
-    int totalscore;
-    int start, limit;
-    int loop = 100;
-    int w=20, h=15;
-
-    if (argc < 4) {
-        cout << "Usage: " << argv[0] << " metrics <start> <stop> <loops> <height> <width> <seed>" << endl
-          << "    loops, height, width and seed are optional and will default to 100, 20, 15 and time()" << endl;
-        return 1;
-    }
-    start = atoi(argv[2]);
-    limit = atoi(argv[3]);
-
-    if (argc > 4)
-        loop = atoi(argv[4]);
-    if (argc > 5)
-        w = atoi(argv[5]);
-    if (argc > 6)
-        h = atoi(argv[6]);
-
-    if (argc > 7)
-        srand(atoi(argv[7]));
-    else
-        srand(time(NULL));
-
-    if (start > limit) {
-        cout << "Error: given start was bigger than stop";
-        return 3;
-    }
-
-
-    for(int a=start; a<limit; a++)
-        for(int b=start; b<limit; b++)
-        for(int c=start; c<limit; c++)
-        for(int d=start; d<limit; d++) {
-            TetrisScore sc(a,b,c,d);
-            totalscore = 0;
-
-            for(int i=0; i<loop; i++) {
-                Tetris board(h, w, sc);
-                board.info = false;
-                board.playgame(Smart);
-                totalscore += board.getPieceCount();
-            }
-            cout << a << "," << b << "," << c << "," << d << "," << totalscore << "\n";
-        }
-    return 0;
-}
-
-
 int play (int argc, char* argv[ ]) {
-  if ( argc != 5 && argc != 6 ) {
+  if ( argc < 5 || argc > 6 ) {
     cout << "Usage: " << argv[0] << " play <height> <width> < r(andom) | s(mart) | m(onte-carlo) >"
          << endl;
     cout << "Or:    " << argv[0] << " play <height> <width> < r(andom) | s(mart) | m(onte-carlo) > <seed>"
@@ -288,32 +248,32 @@ int play (int argc, char* argv[ ]) {
   srand (seed);
 
   string mode = argv[4];
+
   switch (mode.at(0)) {
     case 'r':
-        board.playrandomgame();
-        break;
+      board.playrandomgame();
+      break;
 
     case 's':
-        board.playgame(Smart);
-        break;
+      board.playgame(Smart);
+      break;
 
     case 'm':
-        board.playgame(Montecarlo);
-        break;
+      board.playgame(Montecarlo);
+      break;
   }
-
   board.statistics ( );
   cout << "Seed for this game was: " << seed << endl;
 
   return 0;
-
 }
 
 int main(int argc, char* argv[ ]) {
     if (argc < 2) {
         cout << "Please specify a command:" << endl
             << argv[0] << " play" << endl
-            << argv[0] << " metrics" << endl;
+            << argv[0] << " benchCarlo" << endl;
+            << argv[0] << " smart" << endl;
         return 1;
     }
 
@@ -322,13 +282,17 @@ int main(int argc, char* argv[ ]) {
         case 'p':
             return play(argc, argv);
 
-        case 'm':
-            return calculateMetrics(argc, argv);
+        case 'b':
+            return benchCarlo(argc, argv);
+
+        case 's':
+            return benchSmart(argc, argv);
 
         default:
             cout << argv[0] << " " << command << " not recognized, try:" << endl
                 << argv[0] << " play" << endl
-                << argv[0] << " metrics" << endl;
+                << argv[0] << " benchCarlo" << endl
+                << argv[0] << " smart" << endl;
             return 2;
     }
 }
