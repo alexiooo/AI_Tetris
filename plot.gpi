@@ -1,0 +1,12 @@
+# plot-file voor gnuplot
+     set xrange [0:2048]
+     set yrange [0:1000]
+     set xlabel "tijd"
+     set ylabel "punten"
+	 set logscale x 10
+     set terminal jpeg
+     # of: set terminal postscript eps enhanced color
+     set output "carloav.jpg"
+    
+     plot "carlo.txt" using 1:2 with lines title "tijd"
+		  
