@@ -1,0 +1,15 @@
+# plot-file voor gnuplot
+set xrange [-25:0]
+#set xlabel "Coefficient"
+
+#set yrange [0:30000]
+#set ylabel "Zetten"
+
+set terminal jpeg
+set output "file.jpg"
+#set terminal postscript eps enhanced color
+#set output "file.eps"
+
+set datafile separator ","
+plot 'div_1.csv' using 1:2 axes x1y1,\
+	'div_1_avg.csv' using 1:2 axes x1y1 with lines
