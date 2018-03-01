@@ -1,0 +1,24 @@
+# plot-file voor gnuplot
+set xrange [0:2048]
+set xlabel "Monte loop"
+
+set yrange [0:30000]
+set ylabel "tijd (in seconden)"
+set ytics nomirror
+
+set y2range [0:120]
+set y2label "gem geplaatste stukken"
+set y2tics
+
+#set terminal jpeg
+#set output "file.jpg"
+set terminal postscript eps enhanced color
+set output "carlo.eps"
+
+set style line 1 lc rgb "#FF0055" lt 2 dashtype 2
+
+set datafile separator ","
+plot "benchcarloplot.csv" using 1:2 title "score" axes x1y2,\
+'' using 1:2 with lines notitle axes x1y2,\
+'' using 1:3 title "tijd" axes x1y1,\
+'' using 1:3 with lines notitle axes x1y1
