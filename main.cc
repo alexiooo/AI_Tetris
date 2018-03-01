@@ -138,7 +138,7 @@ class Tetris {
     void getblockedempties(int & blocked, int & heightDiff);
     int evaluate();
     int evaluatemove(PieceName piece, int themove);
-    void playgame(EvalName);
+    void playgame(EvalName eval);
 };//Tetris
 
 // default constructor
@@ -766,7 +766,8 @@ int benchSmart(int argc, char* argv[ ]) {
     cout << endl;
 
     if (!board.info){
-        cout << sc.toprow << ", " << sc.empties << ", " << sc.clears << ", "
+        cout << h << ", "  << w << ", "
+            << sc.toprow << ", " << sc.empties << ", " << sc.clears << ", "
             << sc.blocked << ", " << sc.heightDiff << ", " << loops << ", " << sum << ", " << dev << endl;
         cout << "Avg: " << (double) sum / loops << " pieces per game"
             << endl;

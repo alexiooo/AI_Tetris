@@ -43,51 +43,79 @@ Elke ``beurt'' krijgen we een (willekeurig) stuk, onze zet bestaat dan vervolgen
 
 \section{Relevant werk}\label{relevant}
 
-In eerder onderzoek is aangetoond dat het bepalen van de beste zetten voor het meerdere aspecten van tetris zoals tetrissen geplaats of de meeste rijen verwijderd een NP-clomplete probleem\cite{nphard} is. Dit houdt in dat als er een oplossing wordt aangeboden deze heel makkelijk te verifieren is echter om een oplossing te vinden is dit mogelijk binnen polynomiale tijd echter neemt dit toe naarmate de complexiteit van het probleem toeneemt. Om deze reden is tetris op het moment niet op te lossen op die manier binnen een re"{e}el tijdspan. Om deze reden is er ook onderzoek gedaan naar hoe goed algoritme tetris kan spelen op basis van parameters met een evualatie functie voor zetten. Bij het onderzoek uit 2015 \"An Evolutionary Approach to Tetris\" \cite{genetic} werden 12 parameters gebruikt waar de evualatie functie zich op baseerde waarvan we 4 hebben overgenomen: Aantal verwijderde rijen,aantal lege vakjes met een vakje in dezelfde kolom, hoogte verschil tussen kolommen en lege vakjes. Om de het gewicht van elke parameter te bepalen werd gebruik gemaakt van een genetisch algoritme. Een van de conclusies was dat er veel locale optima waren waar het algoritme niet kon ontsnappen om die reden hebben wij ons dus meer gefocussed op een optima vinden en daarmee verder onderzoek te doen. Verder zouden we niet kunnen concureren met op het punt van hoveelheid parameters en testen in verband met tijdsbeperkingen en rekenvermogen.
+In eerder onderzoek is aangetoond dat het bepalen van de beste zetten een NP-hard probleem\cite{nphard} is---dit geldt zowel als je geplaatste stukken of weggehaalde rijen als score gebruikt. Dit houdt in dat als er een oplossing wordt aangeboden deze heel makkelijk te verifieren is, echter om een (optimale) oplossing te vinden kost dat op zijn minst polynomiale tijd. Als het probleem complexer wordt, wordt de tijd die het kost om een oplossing te vinden extreem groeit.
 
-\section{Aanpak}
+Om deze reden is er ook onderzoek gedaan naar hoe goed een heuristisch algoritme tetris kan spelen, waarbij een zet a.d.v. een aantal kenmerken en co\"{e}ficenten voor die kenmerken worden beoordeeld. Bij het onderzoek uit 2015 ``An Evolutionary Approach to Tetris'' \cite{genetic} werden 12 kenmerken gebruikt waar de evualatie functie zich op baseerde. Drie hiervan gebruiken wij ook: (zie sectie \ref{aanpak} voor uitleg van deze punten)
+\begin{itemize}
+\item Hoogste rij
+\item Weggehaalde rijen
+\item Gaten
+\item Hoogte verschil
+\end{itemize}
 
-Als eerste poging is er een Monte-Carlo algoritme gemaakt. Bij elke beurt wordt elke mogelijke zet een vast aantal willekeurige potjes gespeeld. De zet waarbij in al die spelletjes het meeste stukken werden gespeeld wordt gekozen als de beste zet.
+Om het gewicht van elk kenmerk te bepalen werd gebruik gemaakt van een genetisch algoritme. Een van de conclusies was dat er veel locale optima waren waar het algoritme niet kon ontsnappen. Verder werd geconstateerd dat het bepalen van de optimale gewichten erg veel tijd in beslag neemt---een van de tests heeft 3 maanden gedraaid.
+
+
+\section{Aanpak}\label{aanpak}
+Als eerste poging is er een Monte Carlo algoritme ge\"{i}mplementeerd. Bij elke beurt wordt elke mogelijke zet een vast aantal willekeurige potjes gespeeld. De zet waarbij in al die spelletjes het meeste stukken werden gespeeld wordt gekozen als de beste zet.
 
 Willekeurig spelen is niet erg effici\"{e}nt, dus hebben we ook een ``slim'' algoritme. Zoals gezegd in sectie \ref{probleem} wordt een speelboom al snel erg groot, wij hebben ons dus beperkt tot alle mogelijkheden met het huidige stuk. Elk van deze mogelijkheden wordt ge\"{e}valueerd aan de hand van de volgende punten:
 \begin{itemize}
 
-\item De hoogste rij met bezette vakjes (in het kwadraat)
+\item \textbf{Hoogste Rij} De hoogste rij met bezette vakjes (in het kwadraat)
 
-\item Lege vakjes in de hoogst bezette rij
+\item \textbf{Hoogste Legen} Aantal lege vakjes in de hoogst bezette rij
 
-\item Weggehaalde rijen
+\item \textbf{Weggehaalde rijen} Deze spreekt voor zich
 
-\item Lege vakjes met erboven (in dezelfde kolom) ene niet-leeg vakje
+\item \textbf{Gaten} Lege vakjes met erboven (in dezelfde kolom) ene niet-leeg vakje
 
-\item Het hoogteverschil tussen opeenvolgende rijen
+\item \textbf{Hoogte Verschil} Het hoogteverschil tussen opeenvolgende rijen
 
 \end{itemize}
-Hoe hoger de stapel wilt, hoe erger het is als hij verder stijgt (je komt immers telkens dichter bij het einde). We hebben dus niet direct het nummer van de hoogste rij gepakt, maar het kwadraat daarvan als meetpunt. Elk van deze punten wordt vervolgens met een coeffic\"{i}ent vermenigvuldigt en bij elkaar opgeteld, dit is de uiteindelijke score voor dat bord (en de zet die tot dat bord heeft geleid). Verder wordt natuurlijk weer de zet met de hoogste score gedaan.
+Hoe hoger de stapel wordt, hoe erger het is als hij verder stijgt (je komt immers telkens dichter bij het einde). We hebben dus niet direct het nummer van de hoogste rij gepakt, maar het kwadraat daarvan als meetpunt. Elk van deze punten wordt vervolgens met een coeffic\"{i}ent vermenigvuldigt en bij elkaar opgeteld, dit is de uiteindelijke score voor dat bord (en de zet die tot dat bord heeft geleid). Verder wordt natuurlijk weer de zet met de hoogste score gedaan.
 
 \section{Implementatie}
 
-We hebben gewerkt met C++. Voor de slim en Monte-Carlo functie hebben we gebruikt gemaakt van de possibilities functie die in de geleverde code zat die het aantal mogelijke zetten berekenend hiervan geven we het stuk, orientatie en positie door aan een evualatie functie voor of Monte-Carlo of Slim. De evaluatie funcite werkt met de eerder genoemde 4 parameters : Toprow, aantal lege vakjes toprow, lege vakjes met een vakje erboven in dezelfde column. Die met zekere coefficienten een score op leveren. In deze slimme evualatie functie wordt een kopie gemaakt van het Tetris object en gekeken naar de score van het bord nadat de zet gedaan is. Bij de evaluatie functie van Monte-Carlo wordt er per zet 1000 keer op een kopie van het Tetris object een Random spel uitgespeeld doormiddel van de bijgeleverde PlayRandomGame functie waarbij de score wordt bepaald door het gemiddelde van de potjes.
+Wij hebben in C++ geprogrammeerd. De basis voor de slimme-, en Monte-Carlo speler is hetzelfde. Met \verb+possibilities (piece)+ wordt bepaald hoeveel zetten er mogelijk zijn, elke zet wordt vervolgens gescoord door ofwel \verb+evaluatemove(piece, themove)+ (slim), ofwel \verb+evaluateMonteCarlo(piece, themove)+ (Monte Carlo).
 
-De coefficienten hebben we expirimenteel bepaald.
+\verb+evaluatemove(piece, themove)+ maakt als eerste een kopie van het \verb+Tetris+ object, voert de zet uit en bepaalt de eerder gegeven kenmerken---hoogste rij, hoogste legen, weggehaalde rijen, gaten en hoogte verschil---deze worden vermenigvuldigd met de bijbehorende co\"{e}fficienten (vastgelegd in het \verb+TetrisScore+ struct gegeven in de constructor van \verb+Tetris+) en opgeteld. Deze laatste waarde is wat gereturned wordt als score.
+\verb+evaluatemontecarlo(piece, themove)+ maakt eveneenst eerste een kopie en voert de zet uit. Verder worden er een vast aantal ($monte\_loop$) keer nog een kopie van de staat na de zet gemaakt, een willekeurige potje gespeeld met \verb+playrandomgame( )+ en de uiteindelijk verkregen $piececount$, het aantal gespeelde stukken, van alle potjes opgeteld. Deze totaalscore wordt gereturned.
+
+Welke van de evaluatiefuncties gebruikt wordt, wordt bepaald door de $EvalName$ die aan \verb+playgame(EvalName eval)+ gegeven wordt.
 
 \section{Experimenten}
 
-Voor het berekenenen van de coefficienten hebben we alle coefficienten een waarde van tussen de -5 en 5 aan laten nemen en met die coefficienten in de evaluatie functie 100 potjes te laten spelen waarvan wij het gemiddelde als score zien.
+Ten eerste hebben wij bij de Monte Carlo speler het aantal willekeurige potjes---$monte\_loop$---gevarieerd. Wij hebben voor elke variatie 1000 keer gespeeld, waarbij we bijhouden hoe lang dit duurde en hoe veel stukken gespeeld zijn. Deze tests zijn gedaan op een $15 \times 20$ bord. Absoluut is deze tijd sterk afhankelijk van o.a. de gebruikte hardware en niet zo interessant, maar de stijging geeft wel degelijk informatie. De tijd uitgezet tegenover $monte\_loop$ is bijna lineair (zie Figuur \ref{fig:monte_score}). Het meeste tijd zal worden gespendeerd aan \verb+playrandomgame( )+, die in \'e\'en spel $\#zetten \times monte\_loop$ keer wordt aangeroepen. Als $monte\_loop$ groter wordt, zal het algoritme iets beter werken en dus meer zetten doen. Echter is $monte_loop$ vaak significant groter, waardoor het alsnog bijna lineair is. De behaalde score tegenover $monte\_loop$ is exponenti\"el dalend. Door de willekeurige aard van het Monte Carlo algoritme is dit niet heel vreemd, een $11^e$ poging heeft redelijk kans een betere weg te vinden dan de eerste $10$. Een $101^{ste}$ poging is daarentgen veel minder waarschijnlijk beter dan de eerdere $100$.
 
 
-De resultaten van de experimenten zijn te
-vinden in onderstaande tabel:
+We hebben ook de score per tijdseenheid tegenover $monte\_loop$ geplot in Figuur \ref{fig:monte_eff}. Hier is duidelijk te zien wat ook al uit de voorgaande analyse geconcludeerd kan worden, hoe groter $monte\_loop$ wordt, hoe minder effici\"ent het algoritme wordt. Elke stijging van $monte_loop$ zorgt voor een (iets) grotere stijging van de gespendeerde tijd, meer steeds minder stijging van behaalde score.
 
-\begin{center}
-\begin{tabular}{l|l|l}
-experiment & tijd (sec) & uitslag\\
-\hline
-1 & 10 & $-7$\\
-2 & 42 & 123
-\end{tabular}
-\end{center}
-Hoe verklaren we dit? En waar is de grafiek?
+[ INSERT MONTE CARLO FIGUREN ]
+
+We hebben eveneens beide spelers getest op verschillende bord groottes. Voor Monte Carlo hebben we $monte\_loop = 500$ gebruikt, voor de slimme speler hebben we de co\"efficienten uit Figuur \ref{fig:smart_coef} gebruikt. De score is bepaald als gemiddelde van 500 gespeelde potjes, daarnaast hebben we de standaardfout van dat gemiddelde bepaald.
+
+\begin{figure}
+$$\begin{array}{l||c|c|c|c|c}
+	    & 4 			& 8 			   & 12 			& 16 			 & 20 \\ 
+	\hline\hline
+	8  & 18.2 (\pm 11.5) 	& 24.3 (\pm 11.7) & 25.8 (\pm 11.1)  & 27.3 (\pm 9.6)  & 28.5 (\pm 7.8) \\
+	12 & 41.7 (\pm 22.9) & 61.6 (\pm 28)    & 62 (\pm 23.5)     & 60.6 (\pm 18.2) & 59.1 (\pm 15.1)  \\
+	15 & 59.7 (\pm 30.2) & 91.6 (\pm 41.8) & 86.7 (\pm 29)     & 81.4 (\pm 22..4) & 77.5 (\pm 16.4) \\
+\end{array}$$
+\caption{Gemiddeld behaalde zetten (en standaardfout) van Monte Carlo op verschillende bordgroottes, bepaald door 500 tetris potjes met $monte\_loop=500$}
+\end{figure}
+
+\begin{figure}
+$$\begin{array}{l||c|c|c|c|c}
+	    & 4 			& 8 			   & 12 			& 16 			 & 20 \\ 
+	\hline\hline
+	8  & 18.2 (\pm 11.5) 	& 24.3 (\pm 11.7) & 25.8 (\pm 11.1)  & 27.3 (\pm 9.6)  & 28.5 (\pm 7.8) \\
+	12 & 41.7 (\pm 22.9) & 61.6 (\pm 28)    & 62 (\pm 23.5)     & 60.6 (\pm 18.2) & 59.1 (\pm 15.1)  \\
+	15 & 59.7 (\pm 30.2) & 91.6 (\pm 41.8) & 86.7 (\pm 29)     & 81.4 (\pm 22..4) & 77.5 (\pm 16.4) \\
+\end{array}$$
+\caption{Gemiddeld behaalde zetten (en standaardfout) van de slimme speler op verschillende bordgroottes, bepaald door 500 tetris potjes met co\"efficienten van Figuur \ref{fig:smart_coef}}
+\end{figure}
 
 \section{Conclusie}
 
