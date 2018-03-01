@@ -78,7 +78,7 @@ Hoe hoger de stapel wordt, hoe erger het is als hij verder stijgt (je komt immer
 
 \section{Implementatie}
 
-Wij hebben in C++ geprogrammeerd. De basis voor de slimme-, en Monte-Carlo speler is hetzelfde. Met \verb+possibilities (piece)+ wordt bepaald hoeveel zetten er mogelijk zijn, elke zet wordt vervolgens gescoord door ofwel \verb+evaluatemove(piece, themove)+ (slim), ofwel \verb+evaluateMonteCarlo(piece, themove)+ (Monte Carlo).
+Wij hebben in C++ geprogrammeerd. De basis voor de slimme-, en Monte Carlo speler is hetzelfde. Met \verb+possibilities (piece)+ wordt bepaald hoeveel zetten er mogelijk zijn, elke zet wordt vervolgens gescoord door ofwel \verb+evaluatemove(piece, themove)+ (slim), ofwel \verb+evaluateMonteCarlo(piece, themove)+ (Monte Carlo).
 
 \verb+evaluatemove(piece, themove)+ maakt als eerste een kopie van het \verb+Tetris+ object, voert de zet uit en bepaalt de eerder gegeven kenmerken---hoogste rij, hoogste legen, weggehaalde rijen, gaten en hoogte verschil---deze worden vermenigvuldigd met de bijbehorende co\"{e}fficienten (vastgelegd in het \verb+TetrisScore+ struct gegeven in de constructor van \verb+Tetris+) en opgeteld. Deze laatste waarde is wat gereturned wordt als score.
 \verb+evaluatemontecarlo(piece, themove)+ maakt eveneenst eerste een kopie en voert de zet uit. Verder worden er een vast aantal ($monte\_loop$) keer nog een kopie van de staat na de zet gemaakt, een willekeurige potje gespeeld met \verb+playrandomgame( )+ en de uiteindelijk verkregen $piececount$, het aantal gespeelde stukken, van alle potjes opgeteld. Deze totaalscore wordt gereturned.
@@ -104,12 +104,12 @@ Hoe groter $monte\_loop$ wordt, hoe minder effici\"ent het algoritme wordt. Elke
 
 
 \subsection{Slimme Speler}
-\begin{minipage}{0.65\textwidth}
 Voor het bepalen van de co\"efici\"enten hebben we een aantal logisch lijkende beginwaarden gekozen en hebben we (handmatig) wat gevarieerd. In het begin hebben we getest met 1000 potjes Tetris per variatie, maar hebben ons uiteindelijk tot 100 iteraties vanwege de lange tijd dat een potje duurde. Helaas werd de variatie erg groot---2 potjes met precies eenzelfde configuratie, maar andere seed, hadden een score van $106$ en $60.000$ zetten---en kost het verkrijgen van een enigszins representatief gemiddelde erg veel iteraties en dus tijd. We hebben ons daarom vastgelegd op de configuratie in Figuur \ref{fig:smart_coef}, in de kennis dat er waarschijnlijk een veel optimalere configuratie is.
-\end{minipage}
-\hspace{0.5cm}
-%
-\begin{minipage}{0.25\textwidth}
+
+Deze waardes hebben we wel nog verder getest. We hebben voor elk kenmerk besloten om de andere constant te houden (zodat we maar $5n$ en geen $n^5$ tests hoeven draaien). Daarbij vermenigvuldigen we de specifieke co\"effici\"ent met de getallen $\{0.1, 0.2, 0.5, 0.8, 1, 2.5, 5, 7.5, 10 \}$ en spelen met elk 500 potjes. Het bord kiezen we weer maximaal, $15 \times 20$.
+
+\begin{figure}
+\begin{center}
 \begin{tabular}{l|c}
 	Hoogste Rij		& $-10$ \\ \hline
 	Hoogste Legen		& $50$ \\ \hline
@@ -117,8 +117,19 @@ Voor het bepalen van de co\"efici\"enten hebben we een aantal logisch lijkende b
 	Gaten			& $-200$ \\ \hline
 	Hoogte Verschil		& $-10$ \\
 \end{tabular}
-\captionof{figure}{Co\"{e}fici\"{e}nten voor de slimme speler}\label{fig:smart_coef}
-\end{minipage}
+\end{center}
+\caption{Co\"{e}fici\"{e}nten voor de slimme speler}\label{fig:smart_coef}
+\end{figure}
+
+\begin{figure}
+	\begin{center}
+	\includegraphics[height="5cm"]{div1.eps}
+	\includegraphics[height="5cm"]{div2.eps}
+	\includegraphics[height="5cm"]{div3.eps}
+	\includegraphics[height="5cm"]{div4.eps}
+	\includegraphics[height="5cm"]{div5.eps}
+\end{center}
+\end{figure}
 
 \subsection{Bord Groottes}
 We hebben eveneens beide spelers getest op verschillende bord groottes. Voor Monte Carlo hebben we $monte\_loop = 500$ gebruikt, voor de slimme speler hebben we de co\"effici\"enten uit Figuur \ref{fig:smart_coef} gebruikt. De score is bepaald als gemiddelde van 500 gespeelde potjes, daarnaast hebben we de standaardfout van dat gemiddelde bepaald. De resultaten staan in Figuur~\ref{fig:monte_bord} en Figuur~\ref{fig:smart_bord}. Voor Monte Carlo valt op dat het vooral van extra lengte profiteert, maar extra breedte niet zo goed kan benutten. In principe is dit effect---meer lengte is beter dan meer breedte---verklaarbaar door het feit dat extra breedte, naast het geven van extra ruimte, ook ervoor zorgt dat het weghalen van rijen lastiger wordt. Verder is er maar ruwweg een factor $~5$ verschil tussen de hoogste en laagste scores, wat komt doordat we bij het bepalen van de co\"effici\"enten alleen met een $15 \times 20$ bord hebben getest.
@@ -158,16 +169,15 @@ Verdere verbeteringen zouden kunnen liggen in het toevoegen van meer kenmerken w
 \begin{thebibliography}{XX}
 
 \bibitem{nphard}
-Erik D. Demaine, Susan Hohenberger and David Liben-Nowell, Tetris is
-Hard, Even to Approximate. In Proceedings of the 9th International Computing and
-Combinatorics Conference (COCOON 2003) (2003).
+Erik D. Demaine, Susan Hohenberger and David Liben-Nowell, \\
+Tetris is Hard, Even to Approximate. \\
+In Proceedings of the 9th International Computing and Combinatorics Conference (COCOON 2003) (2003).
 
 \bibitem{genetic}
-Niko B\"{o}hm Gabriella K\´{o}kai Stefan Mandl,
-An Evolutionary Approach to Tetris
-MIC2005: The Sixth Metaheuristics International Conference
-
-https://www2.informatik.uni-erlangen.de/EN/publication/download/mic.pdf
+Niko B\"{o}hm Gabriella K\'{o}kai Stefan Mandl, \\
+An Evolutionary Approach to Tetris \\
+MIC2005: The Sixth Metaheuristics International Conference \\
+\url{https://www2.informatik.uni-erlangen.de/EN/publication/download/mic.pdf}
 
 \end{thebibliography}
 

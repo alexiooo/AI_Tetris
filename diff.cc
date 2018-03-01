@@ -272,7 +272,7 @@ int main(int argc, char* argv[ ]) {
     if (argc < 2) {
         cout << "Please specify a command:" << endl
             << argv[0] << " play" << endl
-            << argv[0] << " benchCarlo" << endl;
+            << argv[0] << " benchCarlo" << endl
             << argv[0] << " smart" << endl;
         return 1;
     }
